@@ -1,4 +1,5 @@
 import type { NextPage } from "next";
+import { formatEther } from "viem";
 import { useAccount } from "wagmi";
 import { MetaHeader } from "~~/components/MetaHeader";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
@@ -10,11 +11,18 @@ import nftsMetadata from "~~/utils/simpleNFT/nftsMetadata";
 
 const MyNFTs: NextPage = () => {
   const { address: connectedAddress, isConnected, isConnecting } = useAccount();
+  const { data: price = 0n } = useScaffoldContractRead({
+    contractName: "YourCollectible",
+    functionName: "PRICE",
+    cacheOnBlock: true,
+  });
 
+  const mintPrice = formatEther(price);
   const { writeAsync: mintItem } = useScaffoldContractWrite({
     contractName: "YourCollectible",
     functionName: "mintItem",
     args: [connectedAddress, ""],
+    value: `${Number(mintPrice)}`,
   });
 
   const { data: tokenIdCounter } = useScaffoldContractRead({

@@ -16,6 +16,7 @@ contract YourCollectible is
 	using Counters for Counters.Counter;
 
 	Counters.Counter public tokenIdCounter;
+	uint public constant PRICE = 0.01 ether;
 
 	constructor() ERC721("YourCollectible", "YCB") {}
 
@@ -23,7 +24,9 @@ contract YourCollectible is
 		return "https://ipfs.io/ipfs/";
 	}
 
-	function mintItem(address to, string memory uri) public returns (uint256) {
+	function mintItem(address to, string memory uri) public payable returns (uint256) {
+		require(msg.value == PRICE, "Mint price mismatch");
+
 		tokenIdCounter.increment();
 		uint256 tokenId = tokenIdCounter.current();
 		_safeMint(to, tokenId);
