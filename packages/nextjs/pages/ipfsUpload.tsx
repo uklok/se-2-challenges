@@ -43,15 +43,9 @@ const IpfsUpload: NextPage = () => {
           src={yourJSON}
           theme="solarized"
           enableClipboard={false}
-          onEdit={edit => {
-            setYourJSON(edit.updated_src);
-          }}
-          onAdd={add => {
-            setYourJSON(add.updated_src);
-          }}
-          onDelete={del => {
-            setYourJSON(del.updated_src);
-          }}
+          onEdit={edit => setYourJSON(edit.updated_src)}
+          onAdd={add => setYourJSON(add.updated_src)}
+          onDelete={del => setYourJSON(del.updated_src)}
         />
         <button
           className={`btn btn-secondary mt-4 ${loading ? "loading" : ""}`}

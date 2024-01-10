@@ -3,16 +3,18 @@ import { create } from "kubo-rpc-client";
 
 export type NFTMetaData = (typeof nftsMetadata)[0];
 
-const PROJECT_ID = "2GajDLTC6y04qsYsoDRq9nGmWwK";
-const PROJECT_SECRET = "48c62c6b3f82d2ecfa2cbe4c90f97037";
-const PROJECT_ID_SECRECT = `${PROJECT_ID}:${PROJECT_SECRET}`;
+const {
+  NEXT_PUBLIC_IPFS_PROJECT_ID: PROJECT_ID = "2GajDLTC6y04qsYsoDRq9nGmWwK",
+  NEXT_PUBLIC_IPFS_PROJECT_SECRET: PROJECT_SECRET = "48c62c6b3f82d2ecfa2cbe4c90f97037",
+} = process.env;
+const PROJECT_ID_SECRET = `${PROJECT_ID}:${PROJECT_SECRET}`;
 
 export const ipfsClient = create({
   host: "ipfs.infura.io",
   port: 5001,
   protocol: "https",
   headers: {
-    Authorization: `Basic ${Buffer.from(PROJECT_ID_SECRECT).toString("base64")}`,
+    Authorization: `Basic ${Buffer.from(PROJECT_ID_SECRET).toString("base64")}`,
   },
 });
 

@@ -40,16 +40,23 @@ describe("🚩 Challenge 0: 🎟 Simple NFT Example 🤓", function () {
         const startingBalance = await myContract.balanceOf(owner.address);
         console.log("\t", " ⚖️ Starting balance: ", startingBalance.toNumber());
 
+        const PRICE = await myContract.PRICE();
+        console.log("\t", ` 💰 Price: ${ethers.utils.formatEther(PRICE)} ETH`);
+
         console.log("\t", " 🔨 Minting...");
-        const mintResult = await myContract.mintItem(owner.address, "QmfVMAmNM1kDEBYrC2TPzQDoCRFH6F5tE1e9Mr4FkkR5Xr");
+        const mintResult = await myContract.mintItem(owner.address, "QmfVMAmNM1kDEBYrC2TPzQDoCRFH6F5tE1e9Mr4FkkR5Xr", {
+          value: PRICE,
+        });
         console.log("\t", " 🏷  mint tx: ", mintResult.hash);
 
         console.log("\t", " ⏳ Waiting for confirmation...");
         const txResult = await mintResult.wait();
         expect(txResult.status).to.equal(1);
 
+        const newBalance = await myContract.balanceOf(owner.address);
         console.log("\t", " 🔎 Checking new balance: ", startingBalance.toNumber());
-        expect(await myContract.balanceOf(owner.address)).to.equal(startingBalance.add(1));
+
+        expect(newBalance).to.equal(startingBalance.add(1));
       });
 
       it("Should track tokens of owner by index", async function () {
