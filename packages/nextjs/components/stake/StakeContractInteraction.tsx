@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Address } from "../scaffold-eth";
+import { EtherInput } from "../scaffold-eth/Input/EtherInput";
 import { ETHToPrice } from "./EthToPrice";
 import humanizeDuration from "humanize-duration";
 import { formatEther } from "viem";
@@ -17,6 +19,7 @@ export const StakeContractInteraction = ({ address }: { address?: string }) => {
   const { data: ExampleExternalContact } = useDeployedContractInfo("ExampleExternalContract");
   const { balance: stakerContractBalance } = useAccountBalance(StakerContract?.address);
   const { balance: exampleExternalContractBalance } = useAccountBalance(ExampleExternalContact?.address);
+  const [stakeAmount, setStakeAmount] = useState<string>("0.5");
 
   const configuredNetwork = getTargetNetwork();
 
@@ -47,7 +50,7 @@ export const StakeContractInteraction = ({ address }: { address?: string }) => {
   const { writeAsync: stakeETH } = useScaffoldContractWrite({
     contractName: "Staker",
     functionName: "stake",
-    value: "0.5",
+    value: stakeAmount,
   });
   const { writeAsync: execute } = useScaffoldContractWrite({
     contractName: "Staker",
@@ -104,7 +107,7 @@ export const StakeContractInteraction = ({ address }: { address?: string }) => {
             {<ETHToPrice value={threshold ? formatEther(threshold) : undefined} />}
           </div>
         </div>
-        <div className="flex flex-col space-y-5">
+        <div className="flex flex-col space-y-5 items-center">
           <div className="flex space-x-7">
             <button className="btn btn-primary" onClick={() => execute()}>
               Execute!
@@ -113,8 +116,15 @@ export const StakeContractInteraction = ({ address }: { address?: string }) => {
               Withdraw
             </button>
           </div>
+
+          <div className="divider divider-primary"></div>
+
+          <div>
+            <p className="block text-xl mt-0 mb-1 font-semibold">Stake Amount</p>
+            <EtherInput value={stakeAmount} name="value" onChange={setStakeAmount}></EtherInput>
+          </div>
           <button className="btn btn-primary" onClick={() => stakeETH()}>
-            🥩 Stake 0.5 ether!
+            🥩 Stake {stakeAmount} ether!
           </button>
         </div>
       </div>
