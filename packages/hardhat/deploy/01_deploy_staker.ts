@@ -19,18 +19,49 @@ const deployStaker: DeployFunction = async function (hre: HardhatRuntimeEnvironm
     You can run the `yarn account` command to check your balance in every network.
   */
   const { deployer } = await hre.getNamedAccounts();
-  const { deploy, get } = hre.deployments;
-  const exampleExternalContract = await get("ExampleExternalContract");
+  const { deploy } = hre.deployments;
+  const fundingContract = await hre.ethers.getContract("ExampleExternalContract", deployer);
 
-  await deploy("Staker", {
+  const { STAKE_THRESHOLD = "1", DATE, SECONDS_FROM_NOW} = process.env;
+  const threshold = hre.ethers.utils.parseEther(STAKE_THRESHOLD);
+  let deadline = 0;
+
+  try {
+    if (DATE === undefined && SECONDS_FROM_NOW === undefined)
+      throw new Error("NO DATE OR SECONDS_FROM_NOW PROVIDED");
+
+    const date = DATE && new Date(DATE);
+    if(date && date < new Date()) throw new Error("Date must be in the future");
+
+    deadline = DATE
+        ? Math.floor((new Date(DATE)).getTime() / 1000)
+        : SECONDS_FROM_NOW
+            ? Math.floor((Date.now() / 1000) + parseInt(SECONDS_FROM_NOW))
+            : 0;
+  } catch (e) {
+    console.warn("Defaulting to contract deadline of 1 week from now");
+  }
+
+  const stakerContract = await deploy("Staker", {
     from: deployer,
     // Contract constructor arguments
-    args: [exampleExternalContract.address],
+    args: [fundingContract.address, threshold, deadline],
     log: true,
     // autoMine: can be passed to the deploy function to make the deployment process faster on local networks by
     // automatically mining the contract deployment transaction. There is no effect on live networks.
     autoMine: true,
   });
+  
+  // get STAKING_ROLE from funding contract
+    const stakingRole = await fundingContract.STAKING_ROLE();
+    const hasRole = await fundingContract.hasRole(stakingRole, stakerContract.address);
+    if (!hasRole) {
+      console.log("Granting staking role to staker contract");
+      const grantTx = await fundingContract.grantRole(stakingRole, stakerContract.address);
+
+      await grantTx.wait();
+      console.log("Granted staking role to staker contract");
+    }
 };
 
 export default deployStaker;
