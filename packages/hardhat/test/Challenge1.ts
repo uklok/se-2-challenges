@@ -16,6 +16,8 @@ describe("🚩 Challenge 1: 🥩 Decentralized Staking App", function () {
 
   let exampleExternalContract: Contract;
   let stakerContract: Contract;
+  const threshold = ethers.utils.parseEther("1");
+  const deadline = Math.floor(Date.now() / 1000 + 30);
 
   describe("Staker", function () {
     if (process.env.CONTRACT_ADDRESS) {
@@ -30,7 +32,12 @@ describe("🚩 Challenge 1: 🥩 Decentralized Staking App", function () {
       });
       it("Should deploy Staker", async function () {
         const Staker = await ethers.getContractFactory("Staker");
-        stakerContract = await Staker.deploy(exampleExternalContract.address);
+
+        stakerContract = await Staker.deploy(exampleExternalContract.address, threshold, deadline);
+
+        const STAKING_ROLE = await exampleExternalContract.STAKING_ROLE();
+        const grantTx = await exampleExternalContract.grantRole(STAKING_ROLE, stakerContract.address);
+        await grantTx.wait();
       });
     }
 
@@ -94,7 +101,7 @@ describe("🚩 Challenge 1: 🥩 Decentralized Staking App", function () {
           exampleExternalContract = await ExampleExternalContract.deploy();
 
           const Staker = await ethers.getContractFactory("Staker");
-          stakerContract = await Staker.deploy(exampleExternalContract.address);
+          stakerContract = await Staker.deploy(exampleExternalContract.address, threshold, deadline);
 
           console.log("\t", " 🔨 Staking...");
           const stakeResult = await stakerContract
@@ -111,8 +118,8 @@ describe("🚩 Challenge 1: 🥩 Decentralized Staking App", function () {
           await network.provider.send("evm_mine");
 
           console.log("\t", " 🎉 calling execute");
-          const execResult = await stakerContract.execute();
-          console.log("\t", " 🏷  execResult: ", execResult.hash);
+          await expect(stakerContract.execute()).to.be.revertedWith("Not enough staked");
+          console.log("\t", " 🏷  execResult: ", null);
 
           const result = await exampleExternalContract.completed();
           console.log("\t", " 🥁 complete should be false: ", result);
