@@ -1,6 +1,8 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
 
+const MIN_DEADLINE = 60;
+
 /**
  * Deploys a contract named "YourContract" using the deployer account and
  * constructor arguments set to the deployer address
@@ -20,9 +22,9 @@ const deployStaker: DeployFunction = async function (hre: HardhatRuntimeEnvironm
   */
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
-  const fundingContract = await hre.ethers.getContract("ExampleExternalContract", deployer);
+  const fundingContract = await hre.ethers.getContract("TargetContract", deployer);
 
-  const { STAKE_THRESHOLD = "1", DATE, SECONDS_FROM_NOW} = process.env;
+  const { STAKE_THRESHOLD = "1", DATE, SECONDS_FROM_NOW = ""} = process.env;
   const threshold = hre.ethers.utils.parseEther(STAKE_THRESHOLD);
   let deadline = 0;
 
@@ -30,14 +32,12 @@ const deployStaker: DeployFunction = async function (hre: HardhatRuntimeEnvironm
     if (DATE === undefined && SECONDS_FROM_NOW === undefined)
       throw new Error("NO DATE OR SECONDS_FROM_NOW PROVIDED");
 
-    const date = DATE && new Date(DATE);
-    if(date && date < new Date()) throw new Error("Date must be in the future");
+    const date = DATE ? Math.floor((new Date(DATE)).getTime() / 1000): NaN;
+    const secondsFromNow = parseInt(SECONDS_FROM_NOW);
+    const now = (await hre.ethers.provider.getBlock('latest')).timestamp;
+    const validDate = date > now + MIN_DEADLINE;
 
-    deadline = DATE
-        ? Math.floor((new Date(DATE)).getTime() / 1000)
-        : SECONDS_FROM_NOW
-            ? Math.floor((Date.now() / 1000) + parseInt(SECONDS_FROM_NOW))
-            : 0;
+    deadline = validDate ? date : secondsFromNow > MIN_DEADLINE ? now + secondsFromNow : 0;
   } catch (e) {
     console.warn("Defaulting to contract deadline of 1 week from now");
   }

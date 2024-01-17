@@ -17,7 +17,7 @@ describe("🚩 Challenge 1: 🥩 Decentralized Staking App", function () {
   let exampleExternalContract: Contract;
   let stakerContract: Contract;
   const threshold = ethers.utils.parseEther("1");
-  const deadline = Math.floor(Date.now() / 1000 + 30);
+  const deadline = async ()=> (await ethers.provider.getBlock('latest')).timestamp + 90
 
   describe("Staker", function () {
     if (process.env.CONTRACT_ADDRESS) {
@@ -26,14 +26,14 @@ describe("🚩 Challenge 1: 🥩 Decentralized Staking App", function () {
         console.log("     🛰 Connected to external contract", stakerContract.address);
       });
     } else {
-      it("Should deploy ExampleExternalContract", async function () {
-        const ExampleExternalContract = await ethers.getContractFactory("ExampleExternalContract");
-        exampleExternalContract = await ExampleExternalContract.deploy();
+      it("Should deploy TargetContract", async function () {
+        const TargetContract = await ethers.getContractFactory("TargetContract");
+        exampleExternalContract = await TargetContract.deploy();
       });
       it("Should deploy Staker", async function () {
         const Staker = await ethers.getContractFactory("Staker");
 
-        stakerContract = await Staker.deploy(exampleExternalContract.address, threshold, deadline);
+        stakerContract = await Staker.deploy(exampleExternalContract.address, threshold, await deadline());
 
         const STAKING_ROLE = await exampleExternalContract.STAKING_ROLE();
         const grantTx = await exampleExternalContract.grantRole(STAKING_ROLE, stakerContract.address);
@@ -97,11 +97,15 @@ describe("🚩 Challenge 1: 🥩 Decentralized Staking App", function () {
         it("Should redeploy Staker, stake, not get enough, and withdraw", async function () {
           const [owner, secondAccount] = await ethers.getSigners();
 
-          const ExampleExternalContract = await ethers.getContractFactory("ExampleExternalContract");
-          exampleExternalContract = await ExampleExternalContract.deploy();
+          console.log("\t", " 🚀 Deploying | TargetContract...");
+          const TargetContract = await ethers.getContractFactory("TargetContract");
+          exampleExternalContract = await TargetContract.deploy();
+          console.log("\t", ` 📦 Deployed: ${exampleExternalContract.address} ...`);
 
+          console.log("\t", " 🚀 Deploying | Staker...");
           const Staker = await ethers.getContractFactory("Staker");
-          stakerContract = await Staker.deploy(exampleExternalContract.address, threshold, deadline);
+          stakerContract = await Staker.deploy(exampleExternalContract.address, threshold, await deadline());
+          console.log("\t", ` 📦 Deployed: ${stakerContract.address} ...`);
 
           console.log("\t", " 🔨 Staking...");
           const stakeResult = await stakerContract

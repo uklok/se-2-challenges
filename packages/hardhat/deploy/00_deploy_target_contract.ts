@@ -7,7 +7,7 @@ import { DeployFunction } from "hardhat-deploy/types";
  *
  * @param hre HardhatRuntimeEnvironment object.
  */
-const deployExampleExternalContract: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+const deployTargetContract: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   /*
     On localhost, the deployer account is the one that comes with Hardhat, which is already funded.
 
@@ -21,7 +21,7 @@ const deployExampleExternalContract: DeployFunction = async function (hre: Hardh
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
 
-  await deploy("ExampleExternalContract", {
+  await deploy("TargetContract", {
     from: deployer,
     log: true,
     // autoMine: can be passed to the deploy function to make the deployment process faster on local networks by
@@ -30,6 +30,6 @@ const deployExampleExternalContract: DeployFunction = async function (hre: Hardh
   });
 };
 
-export default deployExampleExternalContract;
+export default deployTargetContract;
 
-deployExampleExternalContract.tags = ["ExampleExternalContract"];
+deployTargetContract.tags = ["TargetContract"];
