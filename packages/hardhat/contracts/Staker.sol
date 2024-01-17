@@ -20,13 +20,14 @@ contract Staker {
         fundingContract = ExampleExternalContract(_fundingContract);
 
         threshold = _threshold > 0 ? _threshold : 1 ether;
-        deadline = _deadline > 0 ? _deadline : block.timestamp + 1 weeks;
+        deadline = _deadline > 0 && _deadline - block.timestamp > 60 ? _deadline : block.timestamp + 1 weeks;
     }
 
+    //------------------ Main functions ------------------//
     // Allow anyone to stake Ether to the contract
     function stake() public payable {
         // require(!deadlineReached(), "Deadline reached");
-        require(!fundingContract.completed(), "Already completed");
+        require(notCompleted(), "Already completed");
 
         balances[msg.sender] += msg.value;
         emit Stake(msg.sender, msg.value);
@@ -35,7 +36,7 @@ contract Staker {
     // After some `deadline` allow anyone to call an `execute()` function
     // If the deadline has passed and the threshold is met, it should call `exampleExternalContract.complete{value: address(this).balance}()`
     function execute() public {
-        require(!fundingContract.completed(), "Already completed");
+        require(notCompleted(), "Already completed");
 
         require(deadlineReached(), "Deadline not reached");
         require(thresholdReached(), "Not enough staked");
@@ -59,22 +60,28 @@ contract Staker {
         emit Withdraw(msg.sender, amount);
     }
 
+    //------------------ Helper functions ------------------//
     // Add a `timeLeft()` view function that returns the time left before the deadline for the frontend
     function timeLeft() public view returns (uint256) {
         if (block.timestamp >= deadline) return 0;
         return deadline - block.timestamp;
     }
 
-    // Add the `receive()` special function that receives eth and calls stake()
-    receive() external payable {
-        stake();
-    }
-
     function thresholdReached() public view returns (bool) {
-        return address(this).balance >= threshold;
+        return address(this).balance >= threshold || fundingContract.completed();
     }
 
     function deadlineReached() public view returns (bool) {
         return timeLeft() == 0;
+    }
+
+    function notCompleted() public view returns (bool) {
+        return !fundingContract.completed();
+    }
+
+    // ------------------ Fallback function ------------------ //
+    // Add the `receive()` special function that receives eth and calls stake()
+    receive() external payable {
+        stake();
     }
 }
