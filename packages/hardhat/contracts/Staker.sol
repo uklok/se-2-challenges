@@ -10,6 +10,7 @@ contract Staker {
     uint256 public immutable deadline;
 
     mapping(address => uint256) public balances;
+    bool private allowWithdraw = false;
 
     event Stake(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, uint256 amount);
@@ -27,7 +28,7 @@ contract Staker {
     // Allow anyone to stake Ether to the contract
     function stake() public payable {
         // require(!deadlineReached(), "Deadline reached");
-        require(notCompleted(), "Already completed");
+        require(notCompleted() && !allowWithdraw, "Already completed");
 
         balances[msg.sender] += msg.value;
         emit Stake(msg.sender, msg.value);
@@ -37,9 +38,12 @@ contract Staker {
     // If the deadline has passed and the threshold is met, it should call `exampleExternalContract.complete{value: address(this).balance}()`
     function execute() public {
         require(notCompleted(), "Already completed");
+        require(!allowWithdraw, "Withdraw is enabled, call withdraw() instead");
 
         require(deadlineReached(), "Deadline not reached");
-        require(thresholdReached(), "Not enough staked");
+
+        allowWithdraw = !thresholdReached();
+        if (allowWithdraw) return;
 
         uint256 total = address(this).balance;
         fundingContract.complete{value: total}();
@@ -50,8 +54,10 @@ contract Staker {
     function withdraw() public {
         require(deadlineReached(), "Deadline not reached");
         require(!thresholdReached(), "Threshold reached");
+        require(allowWithdraw, "Withdraw is disabled, call execute() first");
 
         uint256 amount = balances[msg.sender];
+        require(amount > 0, "No balance");
         balances[msg.sender] = 0;
 
         (bool sent, bytes memory data) = payable(msg.sender).call{value: amount}("");
@@ -77,6 +83,10 @@ contract Staker {
 
     function notCompleted() public view returns (bool) {
         return !fundingContract.completed();
+    }
+
+    function withdrawEnabled() public view returns (bool) {
+        return allowWithdraw;
     }
 
     // ------------------ Fallback function ------------------ //
