@@ -163,6 +163,13 @@ describe("🚩 Challenge 2: 🏵 Token Vendor 🤖", function () {
       const newOwnerETHBalance = await ethers.provider.getBalance(owner.address);
       console.log("\t", " 🔎 New owner ETH balance: ", ethers.utils.formatEther(newOwnerETHBalance));
 
+      const vendorETHBalanceAfterWithdraw = await ethers.provider.getBalance(vendor.address);
+      console.log(
+        "\t",
+        " ⚖  Vendor contract ETH balance after withdraw: ",
+        ethers.utils.formatEther(vendorETHBalanceAfterWithdraw),
+      );
+
       const tx = await ethers.provider.getTransaction(withdrawResult.hash);
       const receipt = await ethers.provider.getTransactionReceipt(withdrawResult.hash);
       const gasCost = tx.gasPrice?.mul(receipt.gasUsed);
