@@ -112,6 +112,7 @@ const contracts = {
               type: "receive",
             },
           ],
+          blockNumber: 5881,
         },
         RiggedRoll: {
           address: "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
@@ -222,6 +223,7 @@ const contracts = {
               type: "receive",
             },
           ],
+          blockNumber: 5882,
         },
       },
     },
@@ -339,6 +341,7 @@ const contracts = {
               type: "receive",
             },
           ],
+          blockNumber: 5158807,
         },
         RiggedRoll: {
           address: "0xe7509f0BfbEc37220b4624Be6EDc46698dd8B9F6",
@@ -449,6 +452,7 @@ const contracts = {
               type: "receive",
             },
           ],
+          blockNumber: 5158808,
         },
       },
     },
