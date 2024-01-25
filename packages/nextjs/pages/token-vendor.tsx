@@ -39,40 +39,40 @@ const TokenVendor: NextPage = () => {
   });
 
   // // Vendor Balances
-  // const { data: vendorContractData } = useDeployedContractInfo("Vendor");
-  // const { data: vendorTokenBalance } = useScaffoldContractRead({
-  //   contractName: "YourToken",
-  //   functionName: "balanceOf",
-  //   args: [vendorContractData?.address],
-  // });
-  // const { balance: vendorEthBalance } = useAccountBalance(vendorContractData?.address);
+  const { data: vendorContractData } = useDeployedContractInfo("Vendor");
+  const { data: vendorTokenBalance } = useScaffoldContractRead({
+    contractName: "YourToken",
+    functionName: "balanceOf",
+    args: [vendorContractData?.address],
+  });
+  const { balance: vendorEthBalance } = useAccountBalance(vendorContractData?.address);
 
   // // tokenPerEth
-  // const { data: tokensPerEth } = useScaffoldContractRead({
-  //   contractName: "Vendor",
-  //   functionName: "tokensPerEth",
-  // });
+  const { data: TOKENS_PER_ETH } = useScaffoldContractRead({
+    contractName: "Vendor",
+    functionName: "TOKENS_PER_ETH",
+  });
 
   // // Buy Tokens
-  // const { writeAsync: buyTokens } = useScaffoldContractWrite({
-  //   contractName: "Vendor",
-  //   functionName: "buyTokens",
-  //   value: getTokenPrice(tokensToBuy, tokensPerEth),
-  // });
+  const { writeAsync: buyTokens } = useScaffoldContractWrite({
+    contractName: "Vendor",
+    functionName: "buyTokens",
+    value: getTokenPrice(tokensToBuy, TOKENS_PER_ETH),
+  });
 
   // // Approve Tokens
-  // const { writeAsync: approveTokens } = useScaffoldContractWrite({
-  //   contractName: "YourToken",
-  //   functionName: "approve",
-  //   args: [vendorContractData?.address, multiplyTo1e18(tokensToSell)],
-  // });
+  const { writeAsync: approveTokens } = useScaffoldContractWrite({
+    contractName: "YourToken",
+    functionName: "approve",
+    args: [vendorContractData?.address, multiplyTo1e18(tokensToSell)],
+  });
 
   // // Sell Tokens
-  // const { writeAsync: sellTokens } = useScaffoldContractWrite({
-  //   contractName: "Vendor",
-  //   functionName: "sellTokens",
-  //   args: [multiplyTo1e18(tokensToSell)],
-  // });
+  const { writeAsync: sellTokens } = useScaffoldContractWrite({
+    contractName: "Vendor",
+    functionName: "sellTokens",
+    args: [multiplyTo1e18(tokensToSell)],
+  });
 
   return (
     <>
@@ -87,7 +87,7 @@ const TokenVendor: NextPage = () => {
             </div>
           </div>
           {/* Vendor Balances */}
-          {/* <hr className="w-full border-secondary my-3" />
+          <hr className="w-full border-secondary my-3" />
           <div>
             Vendor token balance:{" "}
             <div className="inline-flex items-center justify-center">
@@ -98,13 +98,13 @@ const TokenVendor: NextPage = () => {
           <div>
             Vendor eth balance: {vendorEthBalance?.toFixed(4)}
             <span className="font-bold ml-1">ETH</span>
-          </div> */}
+          </div>
         </div>
 
         {/* Buy Tokens */}
-        {/* <div className="flex flex-col items-center space-y-4 bg-base-100 shadow-lg shadow-secondary border-8 border-secondary rounded-xl p-6 mt-8 w-full max-w-lg">
+        <div className="flex flex-col items-center space-y-4 bg-base-100 shadow-lg shadow-secondary border-8 border-secondary rounded-xl p-6 mt-8 w-full max-w-lg">
           <div className="text-xl">Buy tokens</div>
-          <div>{tokensPerEth?.toString() || 0} tokens per ETH</div>
+          <div>{TOKENS_PER_ETH?.toString() || 0} tokens per ETH</div>
 
           <div className="w-full flex flex-col space-y-2">
             <IntegerInput
@@ -118,7 +118,7 @@ const TokenVendor: NextPage = () => {
           <button className="btn btn-secondary mt-2" onClick={() => buyTokens()}>
             Buy Tokens
           </button>
-        </div> */}
+        </div>
 
         {!!yourTokenBalance && (
           <div className="flex flex-col items-center space-y-4 bg-base-100 shadow-lg shadow-secondary border-8 border-secondary rounded-xl p-6 mt-8 w-full max-w-lg">
@@ -140,10 +140,10 @@ const TokenVendor: NextPage = () => {
         )}
 
         {/* Sell Tokens */}
-        {/* {!!yourTokenBalance && (
+        {!!yourTokenBalance && (
           <div className="flex flex-col items-center space-y-4 bg-base-100 shadow-lg shadow-secondary border-8 border-secondary rounded-xl p-6 mt-8 w-full max-w-lg">
             <div className="text-xl">Sell tokens</div>
-            <div>{tokensPerEth?.toString() || 0} tokens per ETH</div>
+            <div>{TOKENS_PER_ETH?.toString() || 0} tokens per ETH</div>
 
             <div className="w-full flex flex-col space-y-2">
               <IntegerInput
@@ -177,7 +177,7 @@ const TokenVendor: NextPage = () => {
               </button>
             </div>
           </div>
-        )} */}
+        )}
       </div>
     </>
   );
