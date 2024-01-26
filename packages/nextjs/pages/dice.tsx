@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { NextPage } from "next";
-import { formatEther } from "viem";
-import { useBalance } from "wagmi";
+import { formatEther, parseEther } from "viem";
+import { useAccount, useBalance } from "wagmi";
 import { Amount } from "~~/components/Amount";
 import { MetaHeader } from "~~/components/MetaHeader";
 import { Roll, RollEvents } from "~~/components/RollEvents";
@@ -15,7 +15,6 @@ import {
   useScaffoldEventSubscriber,
 } from "~~/hooks/scaffold-eth";
 
-const ROLL_ETH_VALUE = "0.002";
 // const ROLLING_TIME_MS = 500;
 const MAX_TABLE_ROWS = 10;
 
@@ -27,6 +26,8 @@ const DiceGame: NextPage = () => {
 
   const [rolled, setRolled] = useState(false);
   const [isRolling, setIsRolling] = useState(false);
+
+  const [isRiggedRollOwner, setIsRiggedRollOwner] = useState(false);
 
   const { data: riggedRollContract } = useScaffoldContract({ contractName: "RiggedRoll" });
   const { data: riggedRollBalance } = useBalance({
@@ -113,16 +114,34 @@ const DiceGame: NextPage = () => {
     },
   });
 
+  const { data: MIN_ROLL_PRICE } = useScaffoldContractRead({
+    contractName: "DiceGame",
+    functionName: "MIN_ROLL_PRICE",
+  });
+  const ROLL_ETH_VALUE = MIN_ROLL_PRICE ? formatEther(MIN_ROLL_PRICE) : 0n;
   const { writeAsync: randomDiceRoll, isError: rollTheDiceError } = useScaffoldContractWrite({
     contractName: "DiceGame",
     functionName: "rollTheDice",
     value: ROLL_ETH_VALUE,
   });
 
+  const { data: riggedRollOwner } = useScaffoldContractRead({ contractName: "RiggedRoll", functionName: "owner" });
+  const account = useAccount();
+  useEffect(() => {
+    setIsRiggedRollOwner(riggedRollOwner === account?.address);
+  }, [riggedRollOwner, account]);
+
   const { writeAsync: riggedRoll, isError: riggedRollError } = useScaffoldContractWrite({
     contractName: "RiggedRoll",
     functionName: "riggedRoll",
     gas: 1_000_000n,
+  });
+
+  const withdrawAmount = parseEther(riggedRollBalance?.formatted || "0");
+  const { writeAsync: riggedRollWithdraw } = useScaffoldContractWrite({
+    contractName: "RiggedRoll",
+    functionName: "withdraw",
+    args: [account?.address, withdrawAmount],
   });
 
   useEffect(() => {
@@ -150,73 +169,90 @@ const DiceGame: NextPage = () => {
 
           <div className="flex flex-col items-center pt-4 max-lg:row-start-1">
             <div className="flex w-full justify-center">
-              <span className="text-xl"> Roll a 0, 1, or 2 to win the prize! </span>
+              <span className="text-xl">{`Roll between 0 and 5 to win the prize!`}</span>
+            </div>
+
+            <div className="flex items-center mt-1 text-amber-400">
+              <span className="text-lg mr-2 font-bold text-xl">Prize:</span>
+              <Amount amount={prize ? Number(formatEther(prize)) : 0} showUsdPrice className="text-lg"/>
             </div>
 
             <div className="flex items-center mt-1">
-              <span className="text-lg mr-2">Prize:</span>
-              <Amount amount={prize ? Number(formatEther(prize)) : 0} showUsdPrice className="text-lg" />
+              <span className="text-lg mr-2">Roll Price:</span>
+              <Amount amount={Number(ROLL_ETH_VALUE)} showUsdPrice className="text-lg"/>
             </div>
 
             <button
-              onClick={() => {
-                if (!rolled) {
-                  setRolled(true);
-                }
-                setIsRolling(true);
-                randomDiceRoll();
-              }}
-              disabled={isRolling}
-              className="mt-2 btn btn-secondary btn-xl normal-case font-xl text-lg"
+                onClick={() => {
+                  if (!rolled) {
+                    setRolled(true);
+                  }
+                  setIsRolling(true);
+                  randomDiceRoll();
+                }}
+                disabled={isRolling}
+                className="mt-2 btn btn-secondary btn-xl normal-case font-xl text-lg"
             >
               Roll the dice!
             </button>
-            <div className="mt-4 pt-2 flex flex-col items-center w-full justify-center border-t-4 border-primary">
-              <span className="text-2xl">Rigged Roll</span>
-              <div className="flex mt-2 items-center">
-                <span className="mr-2 text-lg">Address:</span>{" "}
-                <Address size="lg" address={riggedRollContract?.address} />{" "}
-              </div>
-              <div className="flex mt-1 items-center">
-                <span className="text-lg mr-2">Balance:</span>
-                <Amount amount={Number(riggedRollBalance?.formatted || 0)} showUsdPrice className="text-lg" />
-              </div>
-            </div>
-            {/* <button
-              onClick={() => {
-                if (!rolled) {
-                  setRolled(true);
-                }
-                setIsRolling(true);
-                riggedRoll();
-              }}
-              disabled={isRolling}
-              className="mt-2 btn btn-secondary btn-xl normal-case font-xl text-lg"
-            >
-              Rigged Roll!
-            </button> */}
+            {isRiggedRollOwner && (
+                <div className="flex flex-col w-full mt-4 pt-2 border-t-4 border-primary items-center">
+                  <div className="flex flex-col items-center">
+                    <span className="text-2xl">Rigged Roll</span>
+                    <div className="flex mt-2 items-center">
+                      <span className="mr-2 text-lg">Address:</span>{" "}
+                      <Address size="lg" address={riggedRollContract?.address}/>{" "}
+                    </div>
+                    <div className="flex mt-1 items-center">
+                      <span className="text-lg mr-2">Balance:</span>
+                      <Amount amount={Number(riggedRollBalance?.formatted || 0)} showUsdPrice className="text-lg"/>
+                    </div>
+                  </div>
+                  <button
+                      onClick={() => {
+                        if (!rolled) {
+                          setRolled(true);
+                        }
+                        setIsRolling(true);
+                        riggedRoll();
+                      }}
+                      disabled={isRolling}
+                      className="mt-2 btn btn-secondary btn-xl normal-case font-xl text-lg"
+                  >
+                    Rigged Roll!
+                  </button>
+                  <button
+                      onClick={() => riggedRollWithdraw()}
+                      disabled={isRolling || withdrawAmount === 0n}
+                      className="mt-2 btn btn-secondary btn-xl normal-case font-xl text-lg"
+                  >
+                    Withdraw!
+                  </button>
+                </div>
+            )}
 
             <div className="flex mt-8">
               {rolled ? (
-                isRolling ? (
-                  <video key="rolling" width={300} height={300} loop src="/rolls/Spin.webm" autoPlay />
-                ) : (
-                  <video key="rolled" width={300} height={300} src={`/rolls/${rolls[0]?.roll || "0"}.webm`} autoPlay />
-                )
+                  isRolling ? (
+                      <video key="rolling" width={300} height={300} loop src="/rolls/Spin.webm" autoPlay/>
+                  ) : (
+                      <video key="rolled" width={300} height={300} src={`/rolls/${rolls[0]?.roll || "0"}.webm`}
+                             autoPlay/>
+                  )
               ) : (
-                <video
-                  ref={videoRef}
-                  key="last"
-                  width={300}
-                  height={300}
-                  src={`/rolls/${rolls[0]?.roll || "0"}.webm`}
-                />
+                  <video
+                      ref={videoRef}
+                      key="last"
+                      width={300}
+                      height={300}
+                      src={`/rolls/${rolls[0]?.roll || "0"}.webm`}
+                  />
               )}
             </div>
           </div>
 
           <div className="max-lg:row-start-3">
-            <WinnerEvents winners={winners} />
+            <WinnerEvents winners={winners}/>
           </div>
         </div>
       </div>
